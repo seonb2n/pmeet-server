@@ -19,18 +19,23 @@ repositories {
 }
 
 dependencies {
+	// mongodb
 	implementation("org.springframework.boot:spring-boot-starter-data-mongodb-reactive")
 
+	// spring webflux
 	implementation("org.springframework.boot:spring-boot-starter-webflux")
 
+	// kotlin coroutines
 	implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
 	implementation("io.projectreactor.kotlin:reactor-kotlin-extensions")
 	implementation("org.jetbrains.kotlin:kotlin-reflect")
 	implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
 	implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor")
 
+	// swagger
+	implementation("org.springdoc:springdoc-openapi-starter-webflux-ui:2.0.4")
 
-
+	//test
 	testImplementation("org.springframework.boot:spring-boot-starter-test")
 	testImplementation("io.projectreactor:reactor-test")
 }
