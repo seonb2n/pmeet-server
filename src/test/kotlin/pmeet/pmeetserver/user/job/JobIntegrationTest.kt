@@ -1,5 +1,6 @@
 package pmeet.pmeetserver.user.job
 
+import io.kotest.core.spec.IsolationMode
 import io.kotest.core.spec.Spec
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe
@@ -22,12 +23,17 @@ import pmeet.pmeetserver.user.domain.job.Job
 import pmeet.pmeetserver.user.dto.job.request.CreateJobRequestDto
 import pmeet.pmeetserver.user.dto.job.response.JobResponseDto
 import pmeet.pmeetserver.user.repository.job.JobRepository
+import pmeet.pmeetserver.util.RestSliceImpl
 
 @ExtendWith(SpringExtension::class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureWebTestClient
 @ExperimentalCoroutinesApi
 internal class JobIntegrationTest : DescribeSpec() {
+
+  override fun isolationMode(): IsolationMode? {
+    return IsolationMode.InstancePerLeaf
+  }
 
   @Autowired
   lateinit var webTestClient: WebTestClient
@@ -79,14 +85,16 @@ internal class JobIntegrationTest : DescribeSpec() {
     }
 
     describe("GET /api/v1/search") {
-      val name = "testName"
+      val jobName = "TestJob"
+      val userId = "1234"
+      val pageNumber = 0
+      val pageSize = 10
       withContext(Dispatchers.IO) {
-        for (i in 1..10) {
-          jobRepository.save(Job(name = name + i)).block()
+        for (i in 1..pageSize * 2) {
+          jobRepository.save(Job(name = jobName + i)).block()
         }
       }
       context("인증된 유저가 직무 이름과 페이지 정보가 주어지면") {
-        val userId = "1234"
         val mockAuthentication = UsernamePasswordAuthenticationToken(userId, null, null)
 
         val performRequest = webTestClient
@@ -94,9 +102,9 @@ internal class JobIntegrationTest : DescribeSpec() {
           .get()
           .uri {
             it.path("/api/v1/jobs/search")
-              .queryParam("name", name)
-              .queryParam("page", 0)
-              .queryParam("size", 10)
+              .queryParam("name", jobName)
+              .queryParam("page", pageNumber)
+              .queryParam("size", pageSize)
               .build()
           }
           .accept(MediaType.APPLICATION_JSON)
@@ -106,17 +114,20 @@ internal class JobIntegrationTest : DescribeSpec() {
           performRequest.expectStatus().isOk
         }
 
-//        it("이름을 포함하는 직무들을 Slice로 반환한다") {
-//          performRequest.expectBody<Slice<JobResponseDto>>().consumeWith {
-//            it.responseBody?.content?.size shouldBe 10
-//            it.responseBody?.isFirst shouldBe true
-//            it.responseBody?.isLast shouldBe false
-//            it.responseBody?.content?.forEachIndexed { index, jobResponseDto ->
-//              jobResponseDto.name shouldBe name + index
-//            }
-//            it.responseBody?.hasNext() shouldBe true
-//          }
-//        }
+        it("이름을 포함하는 직무들을 Slice로 반환한다") {
+          performRequest.expectBody<RestSliceImpl<JobResponseDto>>().consumeWith {
+            it.responseBody?.content?.size shouldBe pageSize
+            it.responseBody?.isFirst shouldBe true
+            it.responseBody?.isLast shouldBe false
+            it.responseBody?.size shouldBe pageSize
+            it.responseBody?.number shouldBe pageNumber
+            it.responseBody?.numberOfElements shouldBe pageSize
+            it.responseBody?.content?.forEachIndexed { index, jobResponseDto ->
+              jobResponseDto.name shouldBe jobName + (index + 1)
+            }
+            it.responseBody?.hasNext() shouldBe true
+          }
+        }
       }
     }
   }
