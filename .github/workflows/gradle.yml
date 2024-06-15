@@ -24,8 +24,8 @@ jobs:
           java-version: '21'
           distribution: 'temurin'
 
-      - name: setup-docker
-        uses: docker-practice/actions-setup-docker@v1
+      - name: Check that the image builds
+        run: docker build . --file Dockerfile
 
       - name: Add executable permission to gradlew
         run: chmod +x ./gradlew
