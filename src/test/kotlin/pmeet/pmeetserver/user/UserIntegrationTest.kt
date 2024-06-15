@@ -33,7 +33,6 @@ import java.time.LocalDate
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureWebTestClient
 @ExperimentalCoroutinesApi
-@ActiveProfiles("test")
 internal class UserIntegrationTest : DescribeSpec() {
   companion object {
     @Container
