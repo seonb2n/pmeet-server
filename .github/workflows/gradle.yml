@@ -28,7 +28,7 @@ jobs:
         run: chmod +x ./gradlew
 
       - name: Build with Gradle
-        run: ./gradlew build
+        run: ./gradlew build -Pspring.profiles.active=test
 
       - name: Run tests with Gradle
         env:
