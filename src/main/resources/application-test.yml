@@ -1,0 +1,50 @@
+spring:
+  data:
+    mongodb:
+      uri: mongodb://test_user:test_pwd@localhost:27017/testdb?authSource=admin
+    redis:
+      host: localhost
+      port: 6379
+  mail:
+    host: smtp.testmail.com
+    port: 465
+    username: testmail@test.com
+    password: testpassword
+    default-encoding: UTF-8
+    properties:
+      mail:
+        smtp:
+          auth: true
+          ssl:
+            enable: true
+          connectiontimeout: 5000
+          starttls:
+            enable: true
+          timeout: 5000
+          writtentimeout: 5000
+        auth-code-expiration-millis: 300000
+  jwt:
+    secret-key: testsecretkeytestsecretkeytestsecretkeytestsecretkeytestsecretkeytestsecretkeytestsecretkeytestsecretkey
+    access-token:
+      expire-seconds: 10800000
+    refresh-token:
+      expire-seconds: 1209600000
+google:
+  oauth:
+    client-id: "${GOOGLE_OAUTH_CLIENT_ID:test-google-client-id}"
+    client-secret: "${GOOGLE_OAUTH_CLIENT_SECRET:test-google-client-secret}"
+    redirect-uri: "${GOOGLE_OAUTH_REDIRECT_URI:http://localhost:8080/api/v1/auth/sign-in/google}"
+naver:
+  oauth:
+    client-id: "${NAVER_OAUTH_CLIENT_ID:test-naver-client-id}"
+    client-secret: "${NAVER_OAUTH_CLIENT_SECRET:test-naver-client-secret}"
+kakao:
+  oauth:
+    client-id: "${KAKAO_OAUTH_CLIENT_ID:test-kakao-client-id}"
+    redirect-uri: "${KAKAO_OAUTH_REDIRECT_URI:http://localhost:8080/api/v1/auth/sign-in/kakao}"
+amazon:
+  aws:
+    access-key: "${AMAZON_AWS_ACCESS_KEY:test-aws-access-key}"
+    secret-key: "${AMAZON_AWS_SECRET_KEY:test-aws-secret-key}"
+    region: "${AMAZON_AWS_REGION:test-region}"
+    bucket: "${AMAZON_AWS_BUCKET:test-bucket}"
