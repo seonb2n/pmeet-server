@@ -30,6 +30,7 @@ class AuthController(
   private val userFacadeService: UserFacadeService,
   private val oauthFacadeService: OauthFacadeService
 ) {
+  // 주석 추가
   @PostMapping("/sign-up")
   @ResponseStatus(HttpStatus.CREATED)
   suspend fun createUser(@RequestBody @Valid requestDto: SignUpRequestDto): UserSignUpResponseDto {
