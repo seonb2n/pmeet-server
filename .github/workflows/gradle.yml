@@ -24,15 +24,11 @@ jobs:
           java-version: '21'
           distribution: 'temurin'
 
+      - name: setup-docker
+        uses: docker-practice/actions-setup-docker@v1
+
       - name: Add executable permission to gradlew
         run: chmod +x ./gradlew
-
-      - name: Install Docker
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y docker.io
-          sudo systemctl start docker
-          sudo systemctl enable docker
 
       - name: Build with Gradle
         run: ./gradlew build
