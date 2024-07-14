@@ -34,6 +34,9 @@ enum class ErrorCode(private val code: String, private val message: String) {
   RESUME_ACTIVE_CHANGE_FORBIDDEN("RESUME-40304", "해당하는 이력서의 프미팅 상태를 변경할 권한이 없습니다."),
   RESUME_NOT_FOUND("RESUME-40400", "해당하는 ID의 이력서를 찾을 수 없습니다."),
 
+  // Porject
+  PROJECT_NOT_FOUND("PROJECT-40400", "해당하는 ID의 프로젝트를 찾을 수 없습니다.")
+
   ;
 
   fun getCode(): String {
