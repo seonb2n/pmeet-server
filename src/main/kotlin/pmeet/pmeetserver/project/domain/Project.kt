@@ -27,4 +27,23 @@ class Project(
   var bookMarkers: List<String> = mutableListOf(), // 북마크를 한 유저 ID 리스트
   val createdAt: LocalDateTime = LocalDateTime.now()
 ) {
+
+  fun update(
+    title: String? = null,
+    startDate: LocalDateTime? = null,
+    endDate: LocalDateTime? = null,
+    thumbNailUrl: String? = null,
+    techStacks: List<String>? = null,
+    recruitments: List<Recruitment>? = null,
+    description: String? = null
+  ) = apply {
+    title?.let { this.title = it }
+    startDate?.let { this.startDate = it }
+    endDate?.let { this.endDate = it }
+    thumbNailUrl?.let { this.thumbNailUrl = it }
+    techStacks?.let { this.techStacks = it }
+    recruitments?.let { this.recruitments = it }
+    description?.let { this.description = it }
+  }
+
 }

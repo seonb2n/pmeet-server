@@ -2,10 +2,13 @@ package pmeet.pmeetserver.project.service
 
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import pmeet.pmeetserver.common.ErrorCode
+import pmeet.pmeetserver.common.exception.ForbiddenRequestException
 import pmeet.pmeetserver.project.domain.Project
 import pmeet.pmeetserver.project.domain.ProjectComment
 import pmeet.pmeetserver.project.domain.Recruitment
 import pmeet.pmeetserver.project.dto.request.CreateProjectRequestDto
+import pmeet.pmeetserver.project.dto.request.UpdateProjectRequestDto
 import pmeet.pmeetserver.project.dto.request.comment.CreateProjectCommentRequestDto
 import pmeet.pmeetserver.project.dto.request.comment.ProjectCommentResponseDto
 import pmeet.pmeetserver.project.dto.response.ProjectResponseDto
@@ -52,5 +55,26 @@ class ProjectFacadeService(
     )
 
     return ProjectCommentResponseDto.from(projectCommentService.save(projectComment))
+  }
+
+  @Transactional
+  suspend fun updateProject(userId: String, requestDto: UpdateProjectRequestDto): ProjectResponseDto {
+    val originalProject = projectService.getProjectById(requestDto.id)
+
+    if (originalProject.userId != userId) {
+      throw ForbiddenRequestException(ErrorCode.PROJECT_UPDATE_FORBIDDEN)
+    }
+
+    originalProject.update(
+      title = requestDto.title,
+      startDate = requestDto.startDate,
+      endDate = requestDto.endDate,
+      thumbNailUrl = requestDto.thumbNailUrl,
+      techStacks = requestDto.techStacks,
+      recruitments = requestDto.recruitments.map { Recruitment(it.jobName, it.numberOfRecruitment) },
+      description = requestDto.description
+    )
+
+    return ProjectResponseDto.from(projectService.update(originalProject))
   }
 }

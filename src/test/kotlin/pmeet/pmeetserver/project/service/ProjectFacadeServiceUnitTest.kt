@@ -1,10 +1,10 @@
 package pmeet.pmeetserver.project.service
 
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.coEvery
 import io.mockk.mockk
-import java.time.LocalDateTime
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -12,12 +12,16 @@ import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.springframework.test.util.ReflectionTestUtils
+import pmeet.pmeetserver.common.ErrorCode
+import pmeet.pmeetserver.common.exception.ForbiddenRequestException
 import pmeet.pmeetserver.project.domain.Project
 import pmeet.pmeetserver.project.domain.ProjectComment
 import pmeet.pmeetserver.project.domain.Recruitment
 import pmeet.pmeetserver.project.dto.request.CreateProjectRequestDto
 import pmeet.pmeetserver.project.dto.request.RecruitmentRequestDto
+import pmeet.pmeetserver.project.dto.request.UpdateProjectRequestDto
 import pmeet.pmeetserver.project.dto.request.comment.CreateProjectCommentRequestDto
+import java.time.LocalDateTime
 
 @ExperimentalCoroutinesApi
 internal class ProjectFacadeServiceUnitTest : DescribeSpec({
@@ -128,7 +132,7 @@ internal class ProjectFacadeServiceUnitTest : DescribeSpec({
       )
       it("ProjectCommentResponseDto를 반환한다") {
         runTest {
-          coEvery { projectService.getProjectById(requestDto.projectId) } answers {project}
+          coEvery { projectService.getProjectById(requestDto.projectId) } answers { project }
           coEvery { projectCommentService.save(any()) } answers { projectComment }
           val result = projectFacadeService.createProjectComment(userId, requestDto)
 
@@ -137,6 +141,65 @@ internal class ProjectFacadeServiceUnitTest : DescribeSpec({
           result.content shouldBe projectComment.content
           result.userId shouldBe projectComment.userId
           result.projectId shouldBe projectComment.projectId
+        }
+      }
+    }
+  }
+
+  describe("updateProject") {
+    val requestDto = UpdateProjectRequestDto(
+      id = project.id!!,
+      title = "updateTitle",
+      startDate = LocalDateTime.of(2024, 7, 20, 0, 0, 0),
+      endDate = LocalDateTime.of(2024, 7, 22, 0, 0, 0),
+      thumbNailUrl = "updateThumbNailUrl",
+      techStacks = listOf("updateTechStack1", "updateTechStack2"),
+      recruitments = listOf(
+        RecruitmentRequestDto(
+          jobName = "updateJobName1",
+          numberOfRecruitment = 3
+        ),
+        RecruitmentRequestDto(
+          jobName = "updateJobName2",
+          numberOfRecruitment = 4
+        )
+      ),
+      description = "updateDescription"
+    )
+    context("Project의 Userid와 요청으로 들어온 userId가 같은 경우") {
+      it("업데이트 후 ProjectResponseDto를 반환한다") {
+        runTest {
+          coEvery { projectService.update(any()) } answers { project }
+          val result = projectFacadeService.updateProject(userId, requestDto)
+
+          result.id shouldBe project.id
+          result.title shouldBe requestDto.title
+          result.startDate shouldBe requestDto.startDate
+          result.endDate shouldBe requestDto.endDate
+          result.thumbNailUrl shouldBe requestDto.thumbNailUrl
+          result.techStacks shouldBe requestDto.techStacks
+          result.recruitments.size shouldBe requestDto.recruitments.size
+          result.recruitments.forEachIndexed { index, recruitmentResponseDto ->
+            recruitmentResponseDto.jobName shouldBe requestDto.recruitments[index].jobName
+            recruitmentResponseDto.numberOfRecruitment shouldBe requestDto.recruitments[index].numberOfRecruitment
+          }
+          result.description shouldBe requestDto.description
+          result.isCompleted shouldBe project.isCompleted
+          result.bookMarkers shouldBe project.bookMarkers
+          result.createdAt shouldBe project.createdAt
+        }
+      }
+    }
+    context("Project Userid와 요청으로 들어온 userId가 다른 경우") {
+      it("ForBiddenRequestException을 던진다") {
+        runTest {
+          coEvery { projectService.update(any()) } answers { project }
+
+          val exception = shouldThrow<ForbiddenRequestException> {
+            projectFacadeService.updateProject("anotherUserId", requestDto)
+          }
+
+          exception.errorCode shouldBe ErrorCode.PROJECT_UPDATE_FORBIDDEN
         }
       }
     }

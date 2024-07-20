@@ -5,11 +5,13 @@ import kotlinx.coroutines.reactor.awaitSingle
 import org.springframework.http.HttpStatus
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 import pmeet.pmeetserver.project.dto.request.CreateProjectRequestDto
+import pmeet.pmeetserver.project.dto.request.UpdateProjectRequestDto
 import pmeet.pmeetserver.project.dto.response.ProjectResponseDto
 import pmeet.pmeetserver.project.service.ProjectFacadeService
 import reactor.core.publisher.Mono
@@ -27,5 +29,14 @@ class ProjectController(
     @RequestBody @Valid requestDto: CreateProjectRequestDto
   ): ProjectResponseDto {
     return projectFacadeService.createProject(userId.awaitSingle(), requestDto)
+  }
+
+  @PutMapping
+  @ResponseStatus(HttpStatus.OK)
+  suspend fun updateProject(
+    @AuthenticationPrincipal userId: Mono<String>,
+    @RequestBody @Valid requestDto: UpdateProjectRequestDto
+  ): ProjectResponseDto {
+    return projectFacadeService.updateProject(userId.awaitSingle(), requestDto)
   }
 }

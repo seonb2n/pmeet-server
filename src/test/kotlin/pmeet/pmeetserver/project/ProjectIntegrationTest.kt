@@ -25,6 +25,7 @@ import pmeet.pmeetserver.project.domain.Project
 import pmeet.pmeetserver.project.domain.Recruitment
 import pmeet.pmeetserver.project.dto.request.CreateProjectRequestDto
 import pmeet.pmeetserver.project.dto.request.RecruitmentRequestDto
+import pmeet.pmeetserver.project.dto.request.UpdateProjectRequestDto
 import pmeet.pmeetserver.project.dto.response.ProjectResponseDto
 import pmeet.pmeetserver.project.repository.ProjectRepository
 import java.time.LocalDateTime
@@ -64,6 +65,7 @@ internal class ProjectIntegrationTest : DescribeSpec() {
     )
 
     project = Project(
+      id = "test-project-id",
       userId = userId,
       title = "testTitle",
       startDate = LocalDateTime.of(2021, 1, 1, 0, 0, 0),
@@ -86,7 +88,7 @@ internal class ProjectIntegrationTest : DescribeSpec() {
 
   init {
     describe("POST api/v1/projects") {
-      context("인증된 유저의 프로젝트 생성 요청이 들어오면") {
+      context("인증된 유저의 Project 생성 요청이 들어오면") {
         val mockAuthentication = UsernamePasswordAuthenticationToken(userId, null, null)
         val requestDto = CreateProjectRequestDto(
           title = "TestProject",
@@ -118,8 +120,9 @@ internal class ProjectIntegrationTest : DescribeSpec() {
           performRequest.expectStatus().isCreated
         }
 
-        it("생성된 프로젝트 정보를 반환한다") {
+        it("생성된 Project 정보를 반환한다") {
           performRequest.expectBody<ProjectResponseDto>().consumeWith { response ->
+            response.responseBody?.id shouldNotBe project.id
             response.responseBody?.title shouldBe requestDto.title
             response.responseBody?.startDate shouldBe requestDto.startDate
             response.responseBody?.endDate shouldBe requestDto.endDate
@@ -131,11 +134,67 @@ internal class ProjectIntegrationTest : DescribeSpec() {
               recruitmentResponseDto.numberOfRecruitment shouldBe requestDto.recruitments[index].numberOfRecruitment
             }
             response.responseBody?.description shouldBe requestDto.description
-            response.responseBody?.userId shouldBe userId
-            response.responseBody?.bookMarkers shouldBe mutableListOf()
-            response.responseBody?.isCompleted shouldBe false
+            response.responseBody?.userId shouldBe project.userId
+            response.responseBody?.bookMarkers shouldBe project.bookMarkers
+            response.responseBody?.isCompleted shouldBe project.isCompleted
             response.responseBody?.createdAt shouldNotBe null
-            response.responseBody?.id shouldNotBe null
+          }
+        }
+      }
+    }
+
+    describe("PUT api/v1/projects") {
+      context("인증된 유저의 Project 수정 요청이 들어오면") {
+        val mockAuthentication = UsernamePasswordAuthenticationToken(userId, null, null)
+        val requestDto = UpdateProjectRequestDto(
+          id = project.id!!,
+          title = "UpdateTitle",
+          startDate = LocalDateTime.of(2024, 7, 20, 0, 0, 0),
+          endDate = LocalDateTime.of(2024, 7, 22, 0, 0, 0),
+          thumbNailUrl = "updateThumbNailUrl",
+          techStacks = listOf("updateTechStack1", "updateTechStack2"),
+          recruitments = listOf(
+            RecruitmentRequestDto(
+              jobName = "updateJobName1",
+              numberOfRecruitment = 3
+            ),
+            RecruitmentRequestDto(
+              jobName = "updateJobName2",
+              numberOfRecruitment = 4
+            )
+          ),
+          description = "updateDescription"
+        )
+        val performRequest = webTestClient
+          .mutateWith(mockAuthentication(mockAuthentication))
+          .put()
+          .uri("/api/v1/projects")
+          .accept(MediaType.APPLICATION_JSON)
+          .bodyValue(requestDto)
+          .exchange()
+
+        it("요청은 성공한다") {
+          performRequest.expectStatus().isOk
+        }
+
+        it("수정된 Project 정보를 반환한다") {
+          performRequest.expectBody<ProjectResponseDto>().consumeWith { response ->
+            response.responseBody?.id shouldBe project.id
+            response.responseBody?.title shouldBe requestDto.title
+            response.responseBody?.startDate shouldBe requestDto.startDate
+            response.responseBody?.endDate shouldBe requestDto.endDate
+            response.responseBody?.thumbNailUrl shouldBe requestDto.thumbNailUrl
+            response.responseBody?.techStacks shouldBe requestDto.techStacks
+            response.responseBody?.recruitments!!.size shouldBe requestDto.recruitments.size
+            response.responseBody?.recruitments!!.forEachIndexed { index, recruitmentResponseDto ->
+              recruitmentResponseDto.jobName shouldBe requestDto.recruitments[index].jobName
+              recruitmentResponseDto.numberOfRecruitment shouldBe requestDto.recruitments[index].numberOfRecruitment
+            }
+            response.responseBody?.description shouldBe requestDto.description
+            response.responseBody?.userId shouldBe project.userId
+            response.responseBody?.bookMarkers shouldBe project.bookMarkers
+            response.responseBody?.isCompleted shouldBe project.isCompleted
+            response.responseBody?.createdAt shouldNotBe null
           }
         }
       }

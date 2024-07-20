@@ -145,7 +145,6 @@ internal class ResumeServiceUnitTest : DescribeSpec({
       it("저장 후 이력서를 반환한다") {
         runTest {
           val resumeUpdateRequestDto = createMockUpdateResumeRequestDto();
-          every { resumeRepository.findByIdAndUserId("resume-id", "John-id") } answers { Mono.just(resume) }
           every { resumeRepository.save(any()) } answers { Mono.just(generateUpdatedResume()) }
 
           val result = resumeService.update(generateUpdatedResume())

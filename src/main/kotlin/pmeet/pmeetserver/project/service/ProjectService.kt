@@ -24,4 +24,9 @@ class ProjectService(
     return projectRepository.findById(projectId).awaitSingleOrNull()
       ?: throw EntityNotFoundException(ErrorCode.PROJECT_NOT_FOUND)
   }
+
+  @Transactional
+  suspend fun update(project: Project): Project {
+    return projectRepository.save(project).awaitSingle()
+  }
 }
