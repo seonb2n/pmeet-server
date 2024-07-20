@@ -5,6 +5,7 @@ import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.verify
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -92,6 +93,20 @@ internal class ProjectCommentServiceUnitTest : DescribeSpec({
           shouldThrow<EntityNotFoundException> {
             projectCommentService.getProjectCommentById(commentId)
           }.errorCode shouldBe ErrorCode.PROJECT_COMMENT_NOT_FOUND
+        }
+      }
+    }
+  }
+
+  describe("deleteAllByProjectId") {
+    context("프로젝트 ID가 주어지면") {
+      it("해당 프로젝트 ID에 해당하는 댓글을 삭제한다") {
+        runTest {
+          every { projectCommentRepository.deleteByProjectId(any()) } answers { Mono.empty() }
+
+          projectCommentService.deleteAllByProjectId(projectComment.projectId)
+
+          verify(exactly = 1) { projectCommentRepository.deleteByProjectId(projectComment.projectId) }
         }
       }
     }

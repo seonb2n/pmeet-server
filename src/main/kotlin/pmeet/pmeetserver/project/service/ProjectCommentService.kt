@@ -24,4 +24,9 @@ class ProjectCommentService(
     return projectCommentRepository.findById(projectCommentId).awaitSingleOrNull()
       ?: throw EntityNotFoundException(ErrorCode.PROJECT_COMMENT_NOT_FOUND)
   }
+  
+  @Transactional
+  suspend fun deleteAllByProjectId(projectId: String) {
+    projectCommentRepository.deleteByProjectId(projectId).awaitSingleOrNull()
+  }
 }
