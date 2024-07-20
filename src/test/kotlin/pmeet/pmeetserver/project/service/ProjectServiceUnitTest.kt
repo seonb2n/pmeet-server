@@ -86,6 +86,8 @@ internal class ProjectServiceUnitTest : DescribeSpec({
           result.description shouldBe project.description
           result.isCompleted shouldBe project.isCompleted
           result.bookMarkers shouldBe project.bookMarkers
+          result.createdAt shouldBe project.createdAt
+          result.updatedAt shouldBe project.updatedAt
         }
       }
     }
@@ -110,6 +112,8 @@ internal class ProjectServiceUnitTest : DescribeSpec({
           result.description shouldBe project.description
           result.isCompleted shouldBe project.isCompleted
           result.bookMarkers shouldBe project.bookMarkers
+          result.createdAt shouldBe project.createdAt
+          result.updatedAt shouldBe project.updatedAt
         }
       }
     }
@@ -166,6 +170,8 @@ internal class ProjectServiceUnitTest : DescribeSpec({
           result.description shouldBe updatedProject.description
           result.isCompleted shouldBe updatedProject.isCompleted
           result.bookMarkers shouldBe updatedProject.bookMarkers
+          result.updatedAt shouldBe updatedProject.updatedAt
+          result.createdAt shouldBe updatedProject.createdAt
         }
       }
     }

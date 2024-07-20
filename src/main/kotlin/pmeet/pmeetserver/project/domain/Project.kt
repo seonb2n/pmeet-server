@@ -25,7 +25,8 @@ class Project(
   var description: String,
   var isCompleted: Boolean = false,
   var bookMarkers: List<String> = mutableListOf(), // 북마크를 한 유저 ID 리스트
-  val createdAt: LocalDateTime = LocalDateTime.now()
+  val createdAt: LocalDateTime = LocalDateTime.now(),
+  var updatedAt: LocalDateTime = LocalDateTime.now() // 조회 시 정렬을 위해 now()로 초기화
 ) {
 
   fun update(
@@ -44,6 +45,7 @@ class Project(
     techStacks?.let { this.techStacks = it }
     recruitments?.let { this.recruitments = it }
     description?.let { this.description = it }
+    this.updatedAt = LocalDateTime.now()
   }
 
 }
