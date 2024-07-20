@@ -91,4 +91,16 @@ class ProjectFacadeService(
 
     return ProjectCommentResponseDto.from(projectCommentService.save(comment))
   }
+
+  @Transactional
+  suspend fun deleteProject(usedId: String, projectId: String) {
+    val project = projectService.getProjectById(projectId)
+
+    if (project.userId != usedId) {
+      throw ForbiddenRequestException(ErrorCode.PROJECT_DELETE_FORBIDDEN)
+    }
+
+    projectCommentService.deleteAllByProjectId(projectId)
+    projectService.delete(project)
+  }
 }
