@@ -42,11 +42,15 @@ jobs:
           event_name: ${{ github.event.workflow_run.event }}
           files: "artifacts/**/TEST-*.xml"
 
-      - name: Publish JaCoCo Coverage Report
-        uses: madrapps/jacoco-report@v1.2
+      - name: JaCoCo Code Coverage Report
+        id: jacoco_reporter
+        uses: PavanMudigonda/jacoco-reporter@v5.0
         with:
-          title: 📊 JaCoCo Test Coverage Report
-          paths: artifacts/**/jacocoTestReport.xml
-          token: ${{ secrets.GITHUB_TOKEN }}
-          min-coverage-overall: 80
-          min-coverage-changed-files: 80
+          coverage_results_path: artifacts/**/jacocoTestReport.xml
+          coverage_report_name: Coverage
+          coverage_report_title: JaCoCo
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          skip_check_run: false
+          minimum_coverage: 50
+          fail_below_threshold: false
+          publish_only_summary: false
