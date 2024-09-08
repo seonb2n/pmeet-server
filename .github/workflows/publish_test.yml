@@ -52,6 +52,9 @@ jobs:
             exit 1
           fi
 
+      - name: Install xml2js
+        run: npm install xml2js
+
       - name: Parse JaCoCo Report and Create Comment
         uses: actions/github-script@v6
         with:
