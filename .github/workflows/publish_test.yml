@@ -42,11 +42,21 @@ jobs:
           event_name: ${{ github.event.workflow_run.event }}
           files: "artifacts/**/TEST-*.xml"
 
+      - name: Find JaCoCo Report
+        id: find_jacoco
+        run: |
+          JACOCO_PATH=$(find ${{ github.workspace }}/artifacts -name "jacocoTestReport.xml" -type f | head -n 1)
+          echo "JACOCO_PATH=${JACOCO_PATH}" >> $GITHUB_OUTPUT
+          if [ -z "$JACOCO_PATH" ]; then
+            echo "JaCoCo report not found"
+            exit 1
+          fi
+
       - name: JaCoCo Code Coverage Report
         id: jacoco_reporter
         uses: PavanMudigonda/jacoco-reporter@v5.0
         with:
-          coverage_results_path: artifacts/**/jacocoTestReport.xml
+          coverage_results_path: ${{ steps.find_jacoco.outputs.JACOCO_PATH }}
           coverage_report_name: Coverage
           coverage_report_title: JaCoCo
           github_token: ${{ secrets.GITHUB_TOKEN }}
@@ -54,3 +64,20 @@ jobs:
           minimum_coverage: 50
           fail_below_threshold: false
           publish_only_summary: false
+
+      - name: Get the Coverage info
+        run: |
+          echo "Total coverage ${{ steps.jacoco_reporter.outputs.coverage_percentage }}"
+          echo "Changed Files coverage ${{ steps.jacoco_reporter.outputs.changed_files_coverage }}"
+
+      - name: Create Coverage Summary Comment
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          header: jacoco
+          message: |
+            ## JaCoCo Code Coverage Summary
+            
+            - Total Coverage: ${{ steps.jacoco_reporter.outputs.coverage_percentage }}%
+            - Changed Files Coverage: ${{ steps.jacoco_reporter.outputs.changed_files_coverage }}%
+            
+            [Detailed Coverage Report](${{ steps.jacoco_reporter.outputs.coverage_report_url }})
