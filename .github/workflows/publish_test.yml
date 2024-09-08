@@ -52,32 +52,71 @@ jobs:
             exit 1
           fi
 
-      - name: JaCoCo Code Coverage Report
-        id: jacoco_reporter
-        uses: PavanMudigonda/jacoco-reporter@v5.0
+      - name: Parse JaCoCo Report and Create Comment
+        uses: actions/github-script@v6
         with:
-          coverage_results_path: ${{ steps.find_jacoco.outputs.JACOCO_PATH }}
-          coverage_report_name: Coverage
-          coverage_report_title: JaCoCo
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          skip_check_run: false
-          minimum_coverage: 50
-          fail_below_threshold: false
-          publish_only_summary: false
-
-      - name: Get the Coverage info
-        run: |
-          echo "Total coverage ${{ steps.jacoco_reporter.outputs.coverage_percentage }}"
-          echo "Changed Files coverage ${{ steps.jacoco_reporter.outputs.changed_files_coverage }}"
-
-      - name: Create Coverage Summary Comment
-        uses: marocchino/sticky-pull-request-comment@v2
-        with:
-          header: jacoco
-          message: |
-            ## JaCoCo Code Coverage Summary
+          github-token: ${{secrets.GITHUB_TOKEN}}
+          script: |
+            const fs = require('fs');
+            const xml2js = require('xml2js');
             
-            - Total Coverage: ${{ steps.jacoco_reporter.outputs.coverage_percentage }}%
-            - Changed Files Coverage: ${{ steps.jacoco_reporter.outputs.changed_files_coverage }}%
+            const xmlFile = '${{ steps.find_jacoco.outputs.JACOCO_PATH }}';
+            const xmlData = fs.readFileSync(xmlFile, 'utf8');
             
-            [Detailed Coverage Report](${{ steps.jacoco_reporter.outputs.coverage_report_url }})
+            xml2js.parseString(xmlData, (err, result) => {
+              if (err) {
+                console.error('Error parsing XML:', err);
+                return;
+              }
+            
+              const counters = result.report.counter;
+              const coverage = {};
+            
+              counters.forEach(counter => {
+                const type = counter.$.type;
+                const missed = parseInt(counter.$.missed);
+                const covered = parseInt(counter.$.covered);
+                const total = missed + covered;
+                const percentage = ((covered / total) * 100).toFixed(2);
+            
+                coverage[type] = {
+                  covered,
+                  missed,
+                  total,
+                  percentage
+                };
+              });
+            
+              const coverageComment = `## JaCoCo Code Coverage Summary
+            
+              | Type | Coverage | Covered | Missed | Total |
+              |------|----------|---------|--------|-------|
+              ${Object.entries(coverage).map(([type, data]) => 
+                `| ${type} | ${data.percentage}% | ${data.covered} | ${data.missed} | ${data.total} |`
+              ).join('\n')}
+            
+              [Detailed coverage report](${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID})
+              `;
+            
+              // Find the associated pull request
+              const { owner, repo } = context.repo;
+              const head_sha = '${{ github.event.workflow_run.head_sha }}';
+              github.rest.pulls.list({ owner, repo, state: 'open', sort: 'updated', direction: 'desc', per_page: 100 })
+                .then(pulls => {
+                  const pr = pulls.data.find(pr => pr.head.sha === head_sha);
+                  if (pr) {
+                    // Create a comment on the pull request
+                    return github.rest.issues.createComment({
+                      issue_number: pr.number,
+                      owner: owner,
+                      repo: repo,
+                      body: coverageComment
+                    });
+                  } else {
+                    console.log('No matching PR found');
+                  }
+                })
+                .catch(error => {
+                  console.error('Error:', error);
+                });
+            });
