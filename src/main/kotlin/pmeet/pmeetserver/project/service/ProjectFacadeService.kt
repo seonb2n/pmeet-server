@@ -26,6 +26,7 @@ import pmeet.pmeetserver.project.dto.response.CompletedProjectResponseDto
 import pmeet.pmeetserver.project.dto.response.GetMyProjectResponseDto
 import pmeet.pmeetserver.project.dto.response.ProjectResponseDto
 import pmeet.pmeetserver.project.dto.response.ProjectWithUserResponseDto
+import pmeet.pmeetserver.project.dto.response.SearchCompleteProjectResponseDto
 import pmeet.pmeetserver.project.dto.response.SearchProjectResponseDto
 import pmeet.pmeetserver.project.dto.tryout.request.CreateProjectTryoutRequestDto
 import pmeet.pmeetserver.project.dto.tryout.request.PatchProjectTryoutRequestDto
@@ -224,6 +225,42 @@ class ProjectFacadeService(
           it,
           userId,
           it.thumbNailUrl?.let { fileService.generatePreSignedUrlToDownload(it) }
+        )
+      },
+      projects.pageable,
+      projects.hasNext()
+    )
+  }
+
+  @Transactional
+  suspend fun searchCompleteProjectSlice(
+    userId: String,
+    requestDto: SearchProjectRequestDto
+  ): Slice<SearchCompleteProjectResponseDto> {
+    val projects = projectService.searchSliceByFilter(
+      requestDto.isCompleted,
+      requestDto.filterType,
+      requestDto.filterValue,
+      requestDto.pageable
+    )
+    val projectMemberList =
+      projectMemberService.findAllMembersByProjectId(projects.content.mapTo(mutableSetOf()) { it.id!! });
+    val memberThumbnailMap = projectMemberList.associate { projectMember ->
+      val id = projectMember.id ?: throw IllegalStateException("ProjectMember id cannot be null")
+      val thumbnailUrl = projectMember.userThumbnail?.let { thumbnail ->
+        fileService.generatePreSignedUrlToDownload(thumbnail)
+      } ?: ""
+      id to thumbnailUrl
+    }
+
+    return SliceImpl(
+      projects.content.map {
+        SearchCompleteProjectResponseDto.of(
+          it,
+          userId,
+          projectMemberList.filter { member -> member.projectId == it.id }.toList(),
+          memberThumbnailMap,
+          it.thumbNailUrl?.let { it1 -> fileService.generatePreSignedUrlToDownload(it1) }
         )
       },
       projects.pageable,
