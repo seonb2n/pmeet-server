@@ -102,7 +102,7 @@ class ProjectController(
 
   @Operation(
     summary = "완표 프밋 목록을 slice 조회한다",
-    description = "search-slice 와 유사하게 프밋 목록을 조회할 수 있다. 완료된 프밋만 검색되며, 해당 프밋의 팀원 목록을 같이 내려준다."
+    description = "search-slice 와 유사하게 프밋 목록을 조회할 수 있다. 완료된 프밋만 검색되며, 해당 프밋의 팀원 목록을 같이 내려준다. isMy 프로퍼티를 통해서 마이 페이지에서도 조회에 사용할 수 있다."
   )
   @GetMapping("/complete/search-slice")
   @ResponseStatus(HttpStatus.OK)
@@ -110,13 +110,14 @@ class ProjectController(
     @AuthenticationPrincipal userId: Mono<String>,
     @RequestParam(required = false) filterType: ProjectFilterType?,
     @RequestParam(required = false) filterValue: String?,
+    @RequestParam(required = false) isMy: Boolean?,
     @RequestParam(defaultValue = "0") page: Int,
     @RequestParam(defaultValue = "8") size: Int,
     @RequestParam(defaultValue = "BOOK_MARKERS") sortBy: ProjectSortProperty,
     @RequestParam(defaultValue = "DESC") direction: Direction
   ): Slice<SearchCompleteProjectResponseDto> {
     val requestDto = SearchProjectRequestDto.of(true, filterType, filterValue, page, size, sortBy, direction)
-    return projectFacadeService.searchCompleteProjectSlice(userId.awaitSingle(), requestDto)
+    return projectFacadeService.searchCompleteProjectSlice(userId.awaitSingle(), requestDto, isMy)
   }
 
 

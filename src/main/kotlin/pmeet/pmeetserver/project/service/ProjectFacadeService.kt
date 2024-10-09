@@ -217,6 +217,8 @@ class ProjectFacadeService(
       requestDto.isCompleted,
       requestDto.filterType,
       requestDto.filterValue,
+      userId,
+      false,
       requestDto.pageable
     )
     return SliceImpl(
@@ -232,16 +234,22 @@ class ProjectFacadeService(
     )
   }
 
+  /**
+   * 완료 프밋을 목록 조회
+   */
   @Transactional
   suspend fun searchCompleteProjectSlice(
     userId: String,
-    requestDto: SearchProjectRequestDto
+    requestDto: SearchProjectRequestDto,
+    isMy: Boolean?
   ): Slice<SearchCompleteProjectResponseDto> {
     val projects = projectService.searchSliceByFilter(
       requestDto.isCompleted,
       requestDto.filterType,
       requestDto.filterValue,
-      requestDto.pageable
+      userId,
+      isMy ?: false,
+      requestDto.pageable,
     )
     val projectMemberList =
       projectMemberService.findAllMembersByProjectId(projects.content.mapTo(mutableSetOf()) { it.id!! });

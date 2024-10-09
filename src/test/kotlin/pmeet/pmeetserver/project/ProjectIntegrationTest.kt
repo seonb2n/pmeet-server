@@ -1060,7 +1060,7 @@ internal class ProjectIntegrationTest : BaseMongoDBTestForIntegration() {
       for (i in 1..20) {
         val newProject = Project(
           id = "testId$i",
-          userId = userId,
+          userId = if (i % 2 == 0) userId else "not-id",
           title = "testTitle$i",
           startDate = LocalDateTime.of(2021, 1, 1, 0, 0, 0),
           endDate = LocalDateTime.of(2021, 12, 31, 23, 59, 59),
@@ -1198,6 +1198,34 @@ internal class ProjectIntegrationTest : BaseMongoDBTestForIntegration() {
           performRequest.expectBody<RestSliceImpl<SearchCompleteProjectResponseDto>>().consumeWith { response ->
             response.responseBody?.content?.get(0)?.id shouldBe "testId20"
             response.responseBody?.content?.get(0)?.bookmarked shouldBe true
+          }
+        }
+      }
+
+      context("인증된 유저가 마이 페이지에서 내가 만든 완료한 Project를 조회하면") {
+
+        val performRequest = webTestClient
+          .mutateWith(mockAuthentication(mockAuthentication))
+          .get()
+          .uri {
+            it.path("/api/v1/projects/complete/search-slice")
+              .queryParam("page", pageNumber)
+              .queryParam("size", pageSize)
+              .queryParam("sortBy", ProjectSortProperty.BOOK_MARKERS)
+              .queryParam("direction", Direction.DESC)
+              .queryParam("isMy", true)
+              .build()
+          }
+          .accept(MediaType.APPLICATION_JSON)
+          .exchange()
+
+        it("요청은 성공한다") {
+          performRequest.expectStatus().isOk
+        }
+
+        it("내가 생성한 완료된 Project 목록을 반환한다") {
+          performRequest.expectBody<RestSliceImpl<SearchCompleteProjectResponseDto>>().consumeWith { response ->
+            response.responseBody?.content?.size shouldBe 10
           }
         }
       }
