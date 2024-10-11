@@ -253,14 +253,11 @@ class ProjectFacadeService(
     )
     val projectMemberList =
       projectMemberService.findAllMembersByProjectId(projects.content.mapTo(mutableSetOf()) { it.id!! });
-    val memberThumbnailMap = projectMemberList.associate { projectMember ->
+    val memberThumbnailMap = projectMemberList.filter { !it.userThumbnail.isNullOrEmpty() }.associate { projectMember ->
       val id = projectMember.id ?: throw IllegalStateException("ProjectMember id cannot be null")
-      val thumbnailUrl = projectMember.userThumbnail?.let { thumbnail ->
-        fileService.generatePreSignedUrlToDownload(thumbnail)
-      } ?: ""
+      val thumbnailUrl = fileService.generatePreSignedUrlToDownload(projectMember.userThumbnail!!)
       id to thumbnailUrl
     }
-
     return SliceImpl(
       projects.content.map {
         SearchCompleteProjectResponseDto.of(

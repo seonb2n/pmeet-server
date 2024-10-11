@@ -22,7 +22,7 @@ data class SearchCompleteProjectResponseDto(
       project: Project,
       userId: String,
       projectMemberList: List<ProjectMember>,
-      memberThumbnailMap: Map<String, String>,
+      memberThumbnailMap: Map<String, String?>,
       thumbNailDownloadUrl: String?
     ): SearchCompleteProjectResponseDto {
       return SearchCompleteProjectResponseDto(
@@ -44,13 +44,13 @@ data class SearchCompleteProjectResponseDto(
 
 data class CompleteProjectMemberDto(
   val name: String,
-  val profileImageUrl: String,
+  val profileImageUrl: String?,
 ) {
   companion object {
     fun of(projectMember: ProjectMember, thumbNailUrl: String?): CompleteProjectMemberDto {
       return CompleteProjectMemberDto(
         name = projectMember.userName,
-        profileImageUrl = thumbNailUrl.let { projectMember.userThumbnail.let { "" } }
+        profileImageUrl = thumbNailUrl
       )
     }
   }

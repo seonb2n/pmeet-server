@@ -1056,7 +1056,6 @@ internal class ProjectIntegrationTest : BaseMongoDBTestForIntegration() {
       val pageNumber = 0
       val pageSize = 10
       val mockAuthentication = UsernamePasswordAuthenticationToken(userId, null, null)
-
       for (i in 1..20) {
         val newProject = Project(
           id = "testId$i",
@@ -1064,7 +1063,7 @@ internal class ProjectIntegrationTest : BaseMongoDBTestForIntegration() {
           title = "testTitle$i",
           startDate = LocalDateTime.of(2021, 1, 1, 0, 0, 0),
           endDate = LocalDateTime.of(2021, 12, 31, 23, 59, 59),
-          thumbNailUrl = "testThumbNailUrl$i",
+          thumbNailUrl = if (i % 5 == 0) null else "testThumbNailUrl$i",  // 5의 배수 인덱스의 프로젝트는 썸네일 없음
           techStacks = listOf("testTechStack1", "testTechStack2"),
           recruitments = recruitments,
           description = "testDescription$i",
@@ -1084,7 +1083,7 @@ internal class ProjectIntegrationTest : BaseMongoDBTestForIntegration() {
           userId = "memberId$i",
           resumeId = "resumeId$i",
           userName = "testUser$i",
-          userThumbnail = "userThumbNail$i",
+          userThumbnail = if (i % 3 == 0) null else "userThumbNail$i",  // 3의 배수 인덱스의 사용자는 썸네일 없음
           userSelfDescription = "description$i",
           positionName = "position$i",
           createdAt = LocalDateTime.now()
@@ -1122,13 +1121,11 @@ internal class ProjectIntegrationTest : BaseMongoDBTestForIntegration() {
             response.responseBody?.forEachIndexed { index, searchCompleteProjectResponseDto ->
               searchCompleteProjectResponseDto.id shouldBe "testId${20 - index}"
               searchCompleteProjectResponseDto.title shouldBe "testTitle${20 - index}"
-              searchCompleteProjectResponseDto.thumbNailUrl shouldNotBe null
               searchCompleteProjectResponseDto.description shouldBe "testDescription${20 - index}"
               searchCompleteProjectResponseDto.createdAt shouldBe LocalDateTime.of(2021, 1, 1, 0, 0, 0)
                 .plusDays(20 - index.toLong())
               searchCompleteProjectResponseDto.projectMembers.size shouldBe 1
               searchCompleteProjectResponseDto.projectMembers[0].name shouldBe "testUser${20 - index}"
-              searchCompleteProjectResponseDto.projectMembers[0].profileImageUrl shouldBe ""
             }
           }
         }
@@ -1226,6 +1223,56 @@ internal class ProjectIntegrationTest : BaseMongoDBTestForIntegration() {
         it("내가 생성한 완료된 Project 목록을 반환한다") {
           performRequest.expectBody<RestSliceImpl<SearchCompleteProjectResponseDto>>().consumeWith { response ->
             response.responseBody?.content?.size shouldBe 10
+          }
+        }
+      }
+
+      context("인증된 유저가 Filter 없이 완료된 Project Slice를 조회하면 (썸네일 null 케이스 포함)") {
+        val performRequest = webTestClient
+          .mutateWith(mockAuthentication(mockAuthentication))
+          .get()
+          .uri {
+            it.path("/api/v1/projects/complete/search-slice")
+              .queryParam("page", pageNumber)
+              .queryParam("size", pageSize)
+              .queryParam("sortBy", ProjectSortProperty.CREATED_AT)
+              .queryParam("direction", Direction.DESC)
+              .build()
+          }
+          .accept(MediaType.APPLICATION_JSON)
+          .exchange()
+
+        it("요청은 성공한다") {
+          performRequest.expectStatus().isOk
+        }
+
+        it("완료된 Project를 대상으로 PageSize만큼 Slice를 반환하며, 일부 프로젝트와 사용자의 썸네일은 null이다") {
+          performRequest.expectBody<RestSliceImpl<SearchCompleteProjectResponseDto>>().consumeWith { response ->
+            response.responseBody?.content?.size shouldBe pageSize
+            response.responseBody?.isFirst shouldBe true
+            response.responseBody?.isLast shouldBe false
+            response.responseBody?.hasNext() shouldBe true
+            response.responseBody?.forEachIndexed { index, searchCompleteProjectResponseDto ->
+              val projectIndex = 20 - index
+              searchCompleteProjectResponseDto.id shouldBe "testId$projectIndex"
+              searchCompleteProjectResponseDto.title shouldBe "testTitle$projectIndex"
+              if (projectIndex % 5 == 0) {
+                searchCompleteProjectResponseDto.thumbNailUrl shouldBe null
+              } else {
+                searchCompleteProjectResponseDto.thumbNailUrl shouldNotBe null
+              }
+              searchCompleteProjectResponseDto.description shouldBe "testDescription$projectIndex"
+              searchCompleteProjectResponseDto.createdAt shouldBe LocalDateTime.of(2021, 1, 1, 0, 0, 0)
+                .plusDays(projectIndex.toLong())
+              searchCompleteProjectResponseDto.projectMembers.size shouldBe 1
+              val member = searchCompleteProjectResponseDto.projectMembers[0]
+              member.name shouldBe "testUser$projectIndex"
+              if (projectIndex % 3 == 0) {
+                member.profileImageUrl shouldBe null
+              } else {
+                member.profileImageUrl shouldNotBe null
+              }
+            }
           }
         }
       }
